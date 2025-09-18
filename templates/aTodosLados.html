@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Board Games Pal</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: url("{{ url_for('static', filename='A todos dLados.png') }}") no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 20px 20px 80px; /* más espacio abajo para el botón fixed */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .home-button {
+      width: 200px;
+      text-align: center;
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #ffcc00;
+      color: black;
+      font-weight: bold;
+      padding: 12px 30px;
+      font-size: 1rem;
+      border: none;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      text-decoration: none;
+      z-index: 999;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .home-button:hover {
+      background-color: #ffaa00;
+      transform: translateX(-50%) scale(1.05);
+    }
+
+    .how-to-play-btn {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      background: #ffcc00;
+      color: black;
+      font-weight: bold;
+      padding: 10px 18px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 1rem;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .how-to-play-btn:hover {
+      background: #ffaa00;
+      transform: scale(1.05);
+    }
+
+    .logo-btn {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      z-index: 1000;
+    }
+
+    .logo-img {
+      width: 120px;
+      height: auto;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .logo-img:hover {
+      transform: scale(1.1);
+    }
+
+    .container {
+      text-align: center;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      max-width: 800px;
+      width: 100%;
+      margin-bottom: 30px;
+      margin-top: 70px; /* para evitar que el container quede pegado a botones */
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      margin-bottom: 15px;
+      color: #ffcc00;
+      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+    }
+
+    p {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+    }
+
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      margin: 20px auto 60px;
+      /* Aquí quitamos la altura fija y la reemplazamos con un padding para mantener proporción */
+      height: 0;
+      padding-bottom: 40%; /* Ajusta este valor para la proporción deseada */
+    }
+
+    canvas {
+      display: block;
+      border-radius: 10px;
+      background: transparent !important;
+      width: 100%;
+      height: 100%;
+    }
+
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 20px;
+      color: white;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 15px 30px;
+      border-radius: 10px;
+      z-index: 10;
+      text-align: center;
+    }
+
+    /* Overlay de instrucciones */
+    .instructions-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      color: white;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .instructions-content {
+      background: rgba(0,0,0,0.9);
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 600px;
+      text-align: center;
+    }
+
+    .instructions-content h2 {
+      margin-bottom: 10px;
+      font-size: 2rem;
+      color: #ffcc00;
+    }
+
+    .instructions-content .circular-image {
+      width: 40%;
+      height: auto;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      display: block;
+      object-fit: cover;
+      aspect-ratio: 1/1;
+    }
+
+    .instructions-content p {
+      margin-top: 0;
+      font-size: 1.2rem;
+    }
+
+    /* Media queries para responsividad */
+
+    /* Media queries para responsividad */
+
+    @media (max-width: 768px) {
+      h1 { font-size: 2.2rem; }
+      p { font-size: 1.1rem; }
+      .canvas-container { height: 300px; margin-bottom: 80px; }
+      .instructions-content .circular-image { width: 50%; }
+      .logo-img { width: 90px; }
+
+      /* Posición superior para los botones */
+      .how-to-play-btn {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        bottom: auto;
+        transform: none;
+        padding: 10px 18px;
+        border-radius: 10px;
+        box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+        font-size: 1rem;
+        z-index: 1000;
+      }
+
+      .logo-btn {
+        position: fixed;
+        top: 15px;   /* Cambio aquí */
+        right: 15px; /* Esquina superior derecha */
+        bottom: auto;
+        z-index: 1000;
+      }
+
+      .container {
+        margin-top: 70px; /* Reducido para ajustarse a la nueva posición de botones */
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 15px 15px 100px; /* más padding abajo para espacio del botón home */
+      }
+      .container {
+        padding: 15px;
+        margin-top: 70px; /* igual que en 768 para mantener espacio arriba */
+      }
+      h1 { font-size: 1.8rem; }
+      p { font-size: 1rem; }
+      .canvas-container { height: 250px; margin-bottom: 100px; }
+      .instructions-content .circular-image { width: 60%; }
+      .how-to-play-btn {
+        font-size: 0.9rem;
+        padding: 8px 14px;
+        top: 15px;
+        left: 10px;
+        bottom: auto;
+        position: fixed;
+        border-radius: 12px;
+        box-shadow: 2px 4px 10px rgba(0,0,0,0.5);
+        transform: none;
+        z-index: 1000;
+      }
+      .logo-btn {
+        position: fixed;
+        top: 15px; /* Cambio aquí */
+        right: 10px; /* Esquina superior derecha */
+        bottom: auto;
+        z-index: 1000;
+      }
+      .logo-img {
+        width: 80px;
+      }
+      .home-button {
+        width: 160px;
+        font-size: 0.9rem;
+        padding: 10px 20px;
+      }
+    }
+
+
+  </style>
+
+</head>
+<body>
+  <!-- Botones como estaban antes -->
+  <a href="https://drive.google.com/file/d/1TolBfXZ8xOm0fMDFpweXDa6JAvGxCgCw/view"
+     target="_blank"
+     class="how-to-play-btn">
+    How to play?
+  </a>
+
+  <a href="https://www.instagram.com/boardgamepals/?igshid=MWttN3NlMjU2YXZjaw%3D%3D#"
+     target="_blank"
+     class="logo-btn">
+    <img src="{{ url_for('static', filename='A todos dLados - logo.png') }}" alt="Logo" class="logo-img">
+  </a>
+
+  <div class="container">
+    <h1>A Todos D <del>L</del> ados</h1>
+    <p>Haz clic en el dado para sacar un juego!</p>
+    <div class="canvas-container">
+      <canvas id="diceCanvas"></canvas>
+      <div class="loading" id="loading-message">Cargando modelo 3D...</div>
+    </div>
+  </div>
+
+  <!-- Overlay para instrucciones del juego -->
+  <div class="instructions-overlay" id="instructionsOverlay">
+    <div class="instructions-content" id="instructionsContent">
+      <!-- Aquí se inyecta el contenido del juego -->
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+
+  <script>
+    // === Clases de Juego y Dado ===
+    class Juego {
+      constructor(titulo, descripcion, imagen = null) {
+        this.titulo = titulo;
+        this.descripcion = descripcion;
+        this.imagen = imagen;
+      }
+    }
+
+    class Dado {
+      constructor() {
+        this.juegos = [
+          new Juego("Mandar dos sorbos", "Elige a quién mandar dos sorbos", "{{ url_for('static', filename='15.png') }}"),
+          new Juego("Yo Nunca", "Piensa en algo que nunca hayas hecho pero que creas que los demás sí hayan hecho. Lanza la pregunta, las personas que lo hayan hecho pierden. Si nadie toma, tomas dos sorbos.", "{{ url_for('static', filename='20.png') }}"),
+          new Juego("Limones", "Cada uno debe enumerarse de la siguiente forma: un limón, dos limones, y así sucesivamente. Se tendrá que repetir la frase: 'XX limón, medio limón, YY limón'. El XX corresponde a la persona que empieza y YY a la siguiente.", "{{ url_for('static', filename='16.png') }}"),
+          new Juego("Regla", "Escoge una regla. La regla es válida hasta que alguien más vuelva a poner una regla.", "{{ url_for('static', filename='21.png') }}"),
+          new Juego("Ritmo Agogo", "Empezarás diciendo la siguiente frase: 'Ritmo, A gogo, diga usted, nombres de XX, por ejemplo YY'. La siguiente persona tendrá que dar otro ejemplo. El primero en demorar o repetir pierde.", "{{ url_for('static', filename='17.png') }}"),
+          new Juego("Medusa", "Todos van a bajar la cabeza y cerrar los ojos. Cuando digas Medusa todos levantan la cabeza y miran fijamente a alguien. Los que se miren fijamente pierden.", "{{ url_for('static', filename='22.png') }}"),
+          new Juego("Verdad o Reto", "Elije a una persona para que conteste verdad o reto. Si no cumple, toma tres sorbos.", "{{ url_for('static', filename='18.png') }}"),
+          new Juego("Preguntas", "Lánzale una pregunta a cualquier persona. La primera persona en demorarse en mandar o responder pierde.", "{{ url_for('static', filename='23.png') }}"),
+          new Juego("Quién es más probable", "Pregunta al grupo quién es más probable de hacer algo. La persona con más votos pierde.", "{{ url_for('static', filename='19.png') }}"),
+          new Juego("Historia", "Empieza diciendo una palabra, la siguiente persona repite lo que se ha dicho e ir formando una oración palabra por palabra. El primero que falle pierde.", "{{ url_for('static', filename='25.png') }}"),
+          new Juego("Toma 2 sorbos", "Toma dos sorbos", "{{ url_for('static', filename='24.png') }}"),
+          new Juego("Asesino", "Todos bajan la cabeza y cierran los ojos. Toca a alguien en el hombro, esa persona será el asesino hasta descubrirse.", "{{ url_for('static', filename='26.png') }}")
+        ];
+      }
+
+      getJuego(cara) {
+        return this.juegos[cara % this.juegos.length];
+      }
+    }
+
+    // === Código Three.js para dado ===
+    let scene, camera, renderer;
+    let dice;
+    let isRolling = false;
+    let targetRotationX = 0;
+    let targetRotationY = 0;
+    let rotationSpeed = 0.1;
+    const miDado = new Dado();
+    let resultadoCara = 0;
+
+    // Función para procesar imágenes y convertirlas en circulares
+    function createCircularImage(imageUrl, callback) {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = function() {
+        // Tamaño del círculo (40% del tamaño original)
+        const size = Math.min(img.width, img.height) * 0.4;
+
+        // Crear canvas temporal
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+
+        // Dibujar círculo de recorte
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        // Dibujar la imagen redimensionada y centrada
+        const scale = size / Math.min(img.width, img.height);
+        const x = (size - img.width * scale) / 2;
+        const y = (size - img.height * scale) / 2;
+        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+
+        // Convertir a URL de datos y llamar al callback
+        callback(canvas.toDataURL('image/png'));
+      };
+      img.src = imageUrl;
+    }
+
+    function init() {
+      scene = new THREE.Scene();
+
+      const canvas = document.getElementById('diceCanvas');
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      resizeRenderer();
+      window.addEventListener('resize', resizeRenderer);
+
+      camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+      camera.position.z = 6;
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      scene.add(ambientLight);
+
+      const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight1.position.set(5,5,5);
+      scene.add(directionalLight1);
+
+      const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+      directionalLight2.position.set(-5,-5,-5);
+      scene.add(directionalLight2);
+
+      loadModel("{{ url_for('static', filename='dodecahedron_dice.glb') }}");
+
+      canvas.addEventListener('click', () => {
+        if (!dice || isRolling) return;
+        isRolling = true;
+
+        targetRotationX = dice.rotation.x + Math.PI * (2 + Math.random() * 4);
+        targetRotationY = dice.rotation.y + Math.PI * (2 + Math.random() * 4);
+
+        animateRoll();
+      });
+
+      animate();
+    }
+
+    function loadModel(path) {
+      const loader = new THREE.GLTFLoader();
+      loader.load(path, function(gltf) {
+        dice = gltf.scene;
+        scene.add(dice);
+
+        const box = new THREE.Box3().setFromObject(dice);
+        const center = box.getCenter(new THREE.Vector3());
+        dice.position.sub(center);
+
+        dice.scale.set(2, 2, 2);
+
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fov = camera.fov * (Math.PI / 180);
+        camera.position.z = Math.abs(maxDim / Math.sin(fov / 2)) * 1.5;
+
+        document.getElementById('loading-message').style.display = 'none';
+      }, undefined, function(error) {
+        console.error('Error al cargar el modelo:', error);
+        document.getElementById('loading-message').textContent = 'Error al cargar el modelo.';
+      });
+    }
+
+    function resizeRenderer() {
+      const container = document.querySelector('.canvas-container');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      renderer.setSize(width, height);
+      if (camera) {
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    function animateRoll() {
+      if (!dice) return;
+
+      dice.rotation.x += (targetRotationX - dice.rotation.x) * rotationSpeed;
+      dice.rotation.y += (targetRotationY - dice.rotation.y) * rotationSpeed;
+
+      const dx = Math.abs(dice.rotation.x - targetRotationX);
+      const dy = Math.abs(dice.rotation.y - targetRotationY);
+
+      if (dx < 0.01 && dy < 0.01) {
+        isRolling = false;
+
+        resultadoCara = Math.floor(Math.random() * 12);
+        const juego = miDado.getJuego(resultadoCara);
+
+        // Mostrar overlay con instrucciones
+        const overlay = document.getElementById('instructionsOverlay');
+        const content = document.getElementById('instructionsContent');
+
+        // Si la imagen existe, procesarla para hacerla circular
+        if (juego.imagen) {
+          createCircularImage(juego.imagen, function(processedImageUrl) {
+            content.innerHTML = `
+              <h2>${juego.titulo}</h2>
+              <img src="${processedImageUrl}" alt="${juego.titulo}" class="circular-image">
+              <p>${juego.descripcion}</p>
+            `;
+            overlay.style.display = 'flex';
+          });
+        } else {
+          content.innerHTML = `
+            <h2>${juego.titulo}</h2>
+            <p>${juego.descripcion}</p>
+          `;
+          overlay.style.display = 'flex';
+        }
+
+        overlay.addEventListener('click', function(e) {
+          if (e.target === overlay) {
+            overlay.style.display = 'none';
+          }
+        }, { once: true });
+
+      } else {
+        requestAnimationFrame(animateRoll);
+      }
+    }
+
+    window.addEventListener('load', init);
+  </script>
+  <a href="{{ url_for('index') }}" class="home-button">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 8px;">
+      <path d="M3 9.5L12 3l9 6.5V20a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-5H9v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2z"/>
+    </svg>
+    Home
+  </a>
+
+</body>
+</html>

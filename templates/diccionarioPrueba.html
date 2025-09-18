@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Cartas</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  <h1>Cartas del Juego</h1>
+  <pre id="output"></pre>
+
+  <script>
+    async function cargarCartas() {
+      // Archivo que quieres leer
+      const url = "{{ url_for('serve_file', filename='Lista de Cartas - ¡3,2,1, Tomen! XXX.xlsx') }}";
+
+      // Descargar el archivo desde Flask
+      const response = await fetch(url);
+      if (!response.ok) {
+        document.getElementById("output").textContent = "No se pudo cargar el archivo.";
+        return;
+      }
+
+      const data = await response.arrayBuffer();
+
+      // Leer Excel con XLSX
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+      // Construir diccionario de cartas
+      const Cartas = {};
+      const grupos = ["acciones", "reglas", "secreto", "reto"];
+
+      grupos.forEach((grupo, idx) => {
+        const cantidad = rows[0][idx];    // Primera fila: cantidad
+        const regla = rows[1][idx];       // Segunda fila: regla
+        let cartas = rows.slice(2)        // Desde fila 3: cartas
+                          .map(row => row[idx])
+                          .filter(Boolean);
+
+        // Quitar el primer elemento (título del grupo)
+        if (cartas.length > 0) cartas.shift();
+
+        Cartas[grupo] = {
+          cantidad: cantidad,
+          regla: regla,
+          cartas: cartas
+        };
+      });
+
+      // Mostrar en pantalla
+      document.getElementById("output").textContent = JSON.stringify(Cartas, null, 2);
+    }
+
+    // Llamar a la función al cargar la página
+    cargarCartas();
+  </script>
+</body>
+</html>
+

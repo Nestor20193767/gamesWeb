@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temporizador</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+    }
+    .timer {
+      background-color: #fff;
+      padding: 20px 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .timer h1 {
+      font-size: 48px;
+      margin: 0;
+      color: #333;
+    }
+    .timer button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #ffcc00;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .timer button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+<div class="timer">
+  <h1 id="time">00:00</h1>
+  <button onclick="startTimer()">Iniciar</button>
+</div>
+
+<script>
+  let totalTime = 300; // tiempo en segundos (5 minutos)
+  let timerInterval;
+
+  function startTimer() {
+    clearInterval(timerInterval); // limpiar intervalos previos
+    timerInterval = setInterval(() => {
+      const minutes = Math.floor(totalTime / 60);
+      const seconds = totalTime % 60;
+      document.getElementById('time').textContent =
+        `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+      totalTime--;
+
+      if (totalTime < 0) {
+        clearInterval(timerInterval);
+        alert("¡Tiempo terminado!");
+      }
+    }, 1000);
+  }
+</script>
+
+</body>
+</html>
