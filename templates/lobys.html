@@ -1,194 +1,694 @@
 <!doctype html>
-<html>
+<html lang="es">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Salas privadas</title>
   <script src="https://cdn.socket.io/4.7.1/socket.io.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f9;
-      margin: 0;
-      padding: 10px;
+    :root {
+      --primary-color: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary-color: #f8f9fa;
+      --text-color: #333;
+      --light-gray: #e9ecef;
+      --success-color: #d1e7dd;
+      --error-color: #f8d7da;
+      --border-radius: 12px;
+      --shadow: 0 2px 10px rgba(0,0,0,0.1);
+      --chat-bg: #fff;
     }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: #f4f4f9;
+      color: var(--text-color);
+      line-height: 1.5;
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      padding: 15px;
+      max-width: 100%;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
     h1 {
       text-align: center;
-      color: #333;
+      color: var(--primary-color);
       font-size: 1.5rem;
+      margin: 10px 0 15px;
+      padding: 0 10px;
     }
-    #controls, #chatControls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin: 10px 0;
+
+    .card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: var(--shadow);
     }
-    input, button {
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
+
+    .form-group {
+      margin-bottom: 12px;
     }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
     input {
-      flex: 1;
-      min-width: 120px;
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: var(--border-radius);
+      border: 1px solid #ddd;
+      font-size: 1rem;
+      background: var(--secondary-color);
+      -webkit-appearance: none;
     }
-    button {
-      cursor: pointer;
-      background: #007bff;
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 20px;
+      background: var(--primary-color);
       color: white;
       border: none;
-      flex-shrink: 0;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.2s;
+      -webkit-tap-highlight-color: transparent;
     }
-    button:hover {
-      background: #0056b3;
+
+    .btn:hover, .btn:active {
+      background: var(--primary-dark);
     }
+
+    .btn-secondary {
+      background: #6c757d;
+    }
+
+    .btn-secondary:hover, .btn-secondary:active {
+      background: #5a6268;
+    }
+
+    .btn-file {
+      background: #6c757d;
+      padding: 12px 15px;
+    }
+
+    .flex-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .flex-buttons .btn {
+      flex: 1;
+    }
+
     #sala {
       text-align: center;
-      margin-top: 10px;
-      font-size: 1.2rem;
+      margin: 10px 0;
+      font-weight: 500;
+      color: var(--primary-color);
+      font-size: 1.1rem;
     }
+
     #players {
       list-style: none;
       padding: 0;
-      margin: 10px auto;
-      max-width: 300px;
-      text-align: center;
+      margin: 10px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
     }
+
     #players li {
-      background: #e9ecef;
-      padding: 5px;
-      margin: 3px 0;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      color: white;
+      font-weight: 500;
+    }
+
+    /* Contenedor principal del chat */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      background: var(--chat-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 15px;
+      min-height: 400px;
+    }
+
+    /* Área de mensajes con altura fija */
+    #chat {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      min-height: 300px;
+      max-height: 50vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scrollbar personalizado para desktop - siempre visible */
+    #chat {
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary-color) var(--light-gray);
+    }
+
+    #chat::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #chat::-webkit-scrollbar-track {
+      background: var(--light-gray);
       border-radius: 4px;
     }
-    #chat {
-      max-width: 800px;
-      margin: 15px auto;
-      background: #fff;
-      padding: 10px;
-      border-radius: 10px;
-      height: 50vh; /* dinámico */
-      overflow-y: auto;
-      border: 1px solid #ddd;
-      box-sizing: border-box;
+
+    #chat::-webkit-scrollbar-thumb {
+      background-color: var(--primary-color);
+      border-radius: 4px;
     }
+
+    /* Mejorar visibilidad del scrollbar en desktop */
+    @media (min-width: 768px) {
+      .chat-container {
+        min-height: 500px;
+      }
+
+      #chat {
+        min-height: 400px;
+        max-height: 500px;
+      }
+    }
+
     .msg {
-      margin: 8px 0;
-      padding: 8px 12px;
-      border-radius: 12px;
+      margin: 10px 0;
+      padding: 10px 15px;
+      border-radius: 18px;
       display: inline-block;
-      max-width: 75%;
+      max-width: 85%;
       clear: both;
       word-wrap: break-word;
+      animation: fadeIn 0.3s ease;
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .msg.me {
-      background: #d1e7dd;
+      background: var(--success-color);
       float: right;
-      text-align: right;
+      border-bottom-right-radius: 5px;
     }
+
     .msg.other {
-      background: #f8d7da;
+      background: var(--error-color);
       float: left;
-      text-align: left;
+      border-bottom-left-radius: 5px;
     }
+
     .author {
       font-weight: bold;
       display: block;
-      margin-bottom: 4px;
-      font-size: 0.85rem;
+      margin-bottom: 3px;
+      font-size: 0.8rem;
     }
 
-    /* 📱 Responsive */
-    @media (max-width: 600px) {
-      body {
-        padding: 5px;
+    /* Estilos para archivos */
+    .file-message {
+      margin-top: 5px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #f1f3f5;
+      display: inline-block;
+      max-width: 100%;
+    }
+
+    .file-image {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 8px;
+    }
+
+    .file-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--primary-color);
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      margin-top: 5px;
+    }
+
+    .file-info {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    /* Área de entrada de mensajes */
+    .chat-input-container {
+      display: flex;
+      gap: 10px;
+      padding: 15px;
+      background: white;
+      border-top: 1px solid #eee;
+      align-items: center;
+    }
+
+    .chat-input-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    #msg {
+      flex: 1;
+      margin: 0;
+    }
+
+    #btnSend {
+      width: auto;
+      padding: 12px 20px;
+      white-space: nowrap;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 12px 20px;
+      border-radius: var(--border-radius);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    /* Estado de conexión */
+    .connection-status {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ccc;
+      z-index: 100;
+    }
+
+    .connection-status.connected {
+      background: #4CAF50;
+    }
+
+    /* Header fijo para la sala */
+    .room-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 10;
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+      margin: -15px -15px 15px -15px;
+    }
+
+    /* Mejoras para móviles específicos */
+    @media (max-width: 767px) {
+      .container {
+        padding: 10px;
       }
+
       h1 {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
+        margin: 5px 0 10px;
       }
+
+      .card {
+        padding: 12px;
+      }
+
+      input, .btn {
+        padding: 10px 12px;
+      }
+
+      .chat-container {
+        min-height: 300px;
+      }
+
       #chat {
-        height: 60vh; /* más alto en móvil */
-        font-size: 0.95rem;
+        padding: 12px;
+        min-height: 200px;
+        max-height: 50vh;
       }
-      input, button {
-        font-size: 0.9rem;
-        padding: 6px;
-      }
+
       .msg {
         max-width: 90%;
+        padding: 8px 12px;
+      }
+
+      .chat-input-container {
+        padding: 12px;
+        flex-wrap: wrap;
+      }
+
+      .chat-input-actions {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 8px;
+      }
+    }
+
+    /* Para dispositivos muy pequeños */
+    @media (max-width: 320px) {
+      .flex-buttons {
+        flex-direction: column;
+      }
+
+      .chat-container {
+        min-height: 250px;
+      }
+
+      #chat {
+        min-height: 150px;
+      }
+    }
+
+    /* Prevenir zoom en inputs en iOS */
+    @media screen and (max-width: 767px) {
+      input, select, textarea {
+        font-size: 16px !important;
       }
     }
   </style>
 </head>
 <body>
-  <h1>Demo: Salas privadas</h1>
+  <div class="connection-status" id="connectionStatus"></div>
 
-  <div id="controls">
-    <button id="btnCreate">Crear sala</button>
-    <input id="roomKey" placeholder="Key de sala">
-    <input id="playerName" placeholder="Tu nombre" value="Jugador">
-    <button id="btnJoin">Unirse</button>
+  <div class="container">
+    <h1>Demo: Salas privadas</h1>
+
+    <div class="card" id="loginPanel">
+      <div class="form-group">
+        <label for="playerName">Tu nombre</label>
+        <input type="text" id="playerName" placeholder="Ingresa tu nombre" value="Jugador">
+      </div>
+
+      <div class="form-group">
+        <label for="roomKey">Key de sala (opcional)</label>
+        <input type="text" id="roomKey" placeholder="Deja vacío para crear sala nueva">
+      </div>
+
+      <div class="flex-buttons">
+        <button class="btn" id="btnCreate">Crear sala</button>
+        <button class="btn btn-secondary" id="btnJoin">Unirse</button>
+      </div>
+    </div>
+
+    <div id="roomPanel" class="hidden">
+      <div class="card">
+        <div class="room-header">
+          <h2 id="sala"></h2>
+          <h3>Jugadores en sala</h3>
+          <ul id="players"></ul>
+        </div>
+
+        <div class="chat-container">
+          <div id="chat"></div>
+          <div class="chat-input-container">
+            <input type="text" id="msg" placeholder="Escribe un mensaje...">
+            <div class="chat-input-actions">
+              <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt">
+              <button class="btn btn-file" id="btnFile">📎 Archivo</button>
+              <button class="btn" id="btnSend">Enviar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <h2 id="sala"></h2>
-  <ul id="players"></ul>
-
-  <div id="chat"></div>
-
-  <div id="chatControls">
-    <input id="msg" placeholder="Mensaje">
-    <button id="btnSend">Enviar</button>
-  </div>
+  <div class="toast" id="toast"></div>
 
   <script>
     let socket = io();
     let currentKey = null;
     let myName = null;
+    let playerColors = {};
 
+    // Elementos de la interfaz
+    const loginPanel = document.getElementById('loginPanel');
+    const roomPanel = document.getElementById('roomPanel');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const toast = document.getElementById('toast');
+    const fileInput = document.getElementById('fileInput');
+    const btnFile = document.getElementById('btnFile');
+
+    // Función para generar color único a partir de un string
+    function stringToColor(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+
+      let color = '#';
+      for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 0xFF;
+        color += ('00' + value.toString(16)).substr(-2);
+      }
+
+      return color;
+    }
+
+    // Función para calcular luminancia y determinar si el color es claro u oscuro
+    function isLightColor(color) {
+      const hex = color.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.5;
+    }
+
+    // Actualizar estado de conexión
+    socket.on('connect', () => {
+      connectionStatus.classList.add('connected');
+    });
+
+    socket.on('disconnect', () => {
+      connectionStatus.classList.remove('connected');
+      showToast('Desconectado del servidor');
+    });
+
+    // Función para mostrar notificaciones toast
+    function showToast(message, duration = 3000) {
+      toast.textContent = message;
+      toast.classList.add('show');
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, duration);
+    }
+
+    // Manejar la selección de archivos
+    btnFile.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        const file = e.target.files[0];
+        sendFile(file);
+      }
+    });
+
+    // Función para enviar archivos
+    function sendFile(file) {
+      if (!file) return;
+
+      // Validar tamaño (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('El archivo es demasiado grande (máximo 5MB)');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const fileData = {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: e.target.result
+        };
+
+        socket.emit("file", {
+          key: currentKey,
+          file: fileData,
+          name: myName
+        });
+      };
+      reader.readAsDataURL(file);
+
+      // Limpiar input de archivo
+      fileInput.value = '';
+    }
+
+    // Crear sala
     document.getElementById("btnCreate").onclick = async () => {
-      let res = await fetch("/create_room", { method: "POST" });
-      let data = await res.json();
-      alert("Sala creada con key: " + data.key);
-      document.getElementById("roomKey").value = data.key;
+      myName = document.getElementById("playerName").value.trim();
+      if (!myName) {
+        showToast('Por favor ingresa tu nombre');
+        return;
+      }
+
+      try {
+        let res = await fetch("/create_room", { method: "POST" });
+        let data = await res.json();
+        currentKey = data.key;
+
+        // Unirse a la sala después de crearla
+        socket.emit("join", { key: currentKey, name: myName });
+      } catch (error) {
+        showToast('Error al crear la sala');
+        console.error(error);
+      }
     };
 
+    // Unirse a sala existente
     document.getElementById("btnJoin").onclick = () => {
+      myName = document.getElementById("playerName").value.trim();
       const key = document.getElementById("roomKey").value.trim();
-      myName = document.getElementById("playerName").value;
+
+      if (!myName) {
+        showToast('Por favor ingresa tu nombre');
+        return;
+      }
+
+      if (!key) {
+        showToast('Por favor ingresa el key de la sala');
+        return;
+      }
+
       currentKey = key;
       socket.emit("join", { key, name: myName });
     };
 
+    // Enviar mensaje
     document.getElementById("btnSend").onclick = () => {
-      const msg = document.getElementById("msg").value;
-      if (!msg) return;
-      socket.emit("message", { key: currentKey, msg, name: myName });
-      document.getElementById("msg").value = "";
+      sendMessage();
     };
 
+    // Enviar mensaje con Enter
+    document.getElementById("msg").addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+
+    function sendMessage() {
+      const msg = document.getElementById("msg").value.trim();
+      if (!msg) return;
+
+      socket.emit("message", { key: currentKey, msg, name: myName });
+      document.getElementById("msg").value = "";
+    }
+
+    // Eventos del socket
     socket.on("joined", data => {
       document.getElementById("sala").innerText = "Sala: " + data.key;
       renderPlayers(data.players);
+
+      // Cambiar a la vista de sala
+      loginPanel.classList.add('hidden');
+      roomPanel.classList.remove('hidden');
+
+      showToast('Te has unido a la sala');
     });
 
     socket.on("player_joined", data => {
       renderPlayers(data.players);
+      showToast('Nuevo jugador se ha unido');
     });
 
     socket.on("message", data => {
       renderMessage(data);
     });
 
+    socket.on("file", data => {
+      renderFile(data);
+    });
+
     socket.on("error", data => {
-      alert("Error: " + data.msg);
+      showToast("Error: " + data.msg);
     });
 
     function renderPlayers(players) {
       let ul = document.getElementById("players");
       ul.innerHTML = "";
+
       players.forEach(p => {
+        // Asignar color único a cada jugador
+        if (!playerColors[p]) {
+          playerColors[p] = stringToColor(p);
+        }
+
+        const color = playerColors[p];
+        const isLight = isLightColor(color);
+
         let li = document.createElement("li");
         li.textContent = p;
+        li.style.backgroundColor = color;
+        li.style.color = isLight ? '#000' : '#fff';
         ul.appendChild(li);
       });
     }
@@ -204,10 +704,88 @@
         msgDiv.classList.add("other");
       }
 
-      msgDiv.innerHTML = `<span class="author">${data.name}</span>${data.msg}`;
+      // Asignar color único al autor del mensaje
+      if (!playerColors[data.name]) {
+        playerColors[data.name] = stringToColor(data.name);
+      }
+
+      const authorColor = playerColors[data.name];
+
+      msgDiv.innerHTML = `<span class="author" style="color: ${authorColor}">${data.name}</span>${data.msg}`;
       chat.appendChild(msgDiv);
       chat.scrollTop = chat.scrollHeight;
     }
+
+    function renderFile(data) {
+      const chat = document.getElementById("chat");
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("msg");
+
+      if (data.name === myName) {
+        msgDiv.classList.add("me");
+      } else {
+        msgDiv.classList.add("other");
+      }
+
+      // Asignar color único al autor del mensaje
+      if (!playerColors[data.name]) {
+        playerColors[data.name] = stringToColor(data.name);
+      }
+
+      const authorColor = playerColors[data.name];
+
+      let fileContent = '';
+      const file = data.file;
+
+      if (file.type.startsWith('image/')) {
+        // Es una imagen
+        fileContent = `
+          <div class="file-message">
+            <img src="${file.data}" alt="${file.name}" class="file-image">
+            <div class="file-info">${file.name} (${formatFileSize(file.size)})</div>
+          </div>
+        `;
+      } else {
+        // Es otro tipo de archivo
+        fileContent = `
+          <div class="file-message">
+            <div>Archivo adjunto:</div>
+            <a href="${file.data}" download="${file.name}" class="file-download">
+              📥 ${file.name}
+            </a>
+            <div class="file-info">${formatFileSize(file.size)}</div>
+          </div>
+        `;
+      }
+
+      msgDiv.innerHTML = `<span class="author" style="color: ${authorColor}">${data.name}</span>${fileContent}`;
+      chat.appendChild(msgDiv);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' bytes';
+      else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      else return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    // Ajustar altura del chat para evitar superposición con teclado virtual
+    function adjustChatHeight() {
+      const chat = document.getElementById('chat');
+      if (chat && window.innerWidth < 768) {
+        const windowHeight = window.innerHeight;
+        const chatRect = chat.getBoundingClientRect();
+        const newHeight = windowHeight - chatRect.top - 100; // 100px para el input y márgenes
+        chat.style.maxHeight = `${newHeight}px`;
+      }
+    }
+
+    // Ajustar cuando cambia la orientación o tamaño de ventana
+    window.addEventListener('resize', adjustChatHeight);
+    window.addEventListener('orientationchange', adjustChatHeight);
+
+    // Inicializar
+    adjustChatHeight();
   </script>
 </body>
 </html>
