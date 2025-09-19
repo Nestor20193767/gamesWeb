@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Salas privadas</title>
+  <script src="https://cdn.socket.io/4.7.1/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      margin: 0;
+      padding: 10px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      font-size: 1.5rem;
+    }
+    #controls, #chatControls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 10px 0;
+    }
+    input, button {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    input {
+      flex: 1;
+      min-width: 120px;
+    }
+    button {
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+      border: none;
+      flex-shrink: 0;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #sala {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 1.2rem;
+    }
+    #players {
+      list-style: none;
+      padding: 0;
+      margin: 10px auto;
+      max-width: 300px;
+      text-align: center;
+    }
+    #players li {
+      background: #e9ecef;
+      padding: 5px;
+      margin: 3px 0;
+      border-radius: 4px;
+    }
+    #chat {
+      max-width: 800px;
+      margin: 15px auto;
+      background: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      height: 50vh; /* dinámico */
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      box-sizing: border-box;
+    }
+    .msg {
+      margin: 8px 0;
+      padding: 8px 12px;
+      border-radius: 12px;
+      display: inline-block;
+      max-width: 75%;
+      clear: both;
+      word-wrap: break-word;
+    }
+    .msg.me {
+      background: #d1e7dd;
+      float: right;
+      text-align: right;
+    }
+    .msg.other {
+      background: #f8d7da;
+      float: left;
+      text-align: left;
+    }
+    .author {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.85rem;
+    }
+
+    /* 📱 Responsive */
+    @media (max-width: 600px) {
+      body {
+        padding: 5px;
+      }
+      h1 {
+        font-size: 1.2rem;
+      }
+      #chat {
+        height: 60vh; /* más alto en móvil */
+        font-size: 0.95rem;
+      }
+      input, button {
+        font-size: 0.9rem;
+        padding: 6px;
+      }
+      .msg {
+        max-width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Demo: Salas privadas</h1>
+
+  <div id="controls">
+    <button id="btnCreate">Crear sala</button>
+    <input id="roomKey" placeholder="Key de sala">
+    <input id="playerName" placeholder="Tu nombre" value="Jugador">
+    <button id="btnJoin">Unirse</button>
+  </div>
+
+  <h2 id="sala"></h2>
+  <ul id="players"></ul>
+
+  <div id="chat"></div>
+
+  <div id="chatControls">
+    <input id="msg" placeholder="Mensaje">
+    <button id="btnSend">Enviar</button>
+  </div>
+
+  <script>
+    let socket = io();
+    let currentKey = null;
+    let myName = null;
+
+    document.getElementById("btnCreate").onclick = async () => {
+      let res = await fetch("/create_room", { method: "POST" });
+      let data = await res.json();
+      alert("Sala creada con key: " + data.key);
+      document.getElementById("roomKey").value = data.key;
+    };
+
+    document.getElementById("btnJoin").onclick = () => {
+      const key = document.getElementById("roomKey").value.trim();
+      myName = document.getElementById("playerName").value;
+      currentKey = key;
+      socket.emit("join", { key, name: myName });
+    };
+
+    document.getElementById("btnSend").onclick = () => {
+      const msg = document.getElementById("msg").value;
+      if (!msg) return;
+      socket.emit("message", { key: currentKey, msg, name: myName });
+      document.getElementById("msg").value = "";
+    };
+
+    socket.on("joined", data => {
+      document.getElementById("sala").innerText = "Sala: " + data.key;
+      renderPlayers(data.players);
+    });
+
+    socket.on("player_joined", data => {
+      renderPlayers(data.players);
+    });
+
+    socket.on("message", data => {
+      renderMessage(data);
+    });
+
+    socket.on("error", data => {
+      alert("Error: " + data.msg);
+    });
+
+    function renderPlayers(players) {
+      let ul = document.getElementById("players");
+      ul.innerHTML = "";
+      players.forEach(p => {
+        let li = document.createElement("li");
+        li.textContent = p;
+        ul.appendChild(li);
+      });
+    }
+
+    function renderMessage(data) {
+      const chat = document.getElementById("chat");
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("msg");
+
+      if (data.name === myName) {
+        msgDiv.classList.add("me");
+      } else {
+        msgDiv.classList.add("other");
+      }
+
+      msgDiv.innerHTML = `<span class="author">${data.name}</span>${data.msg}`;
+      chat.appendChild(msgDiv);
+      chat.scrollTop = chat.scrollHeight;
+    }
+  </script>
+</body>
+</html>
