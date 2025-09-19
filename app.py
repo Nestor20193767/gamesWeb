@@ -17,19 +17,19 @@ def index():
 
 @app.route("/a-todos-lados")
 def a_todos_lados():
-    return render_template("aTodoslados.html")
+    return render_template("a_todos_lados.html")
 
-@app.route("/Dilo-Sin-Roche")
+@app.route("/dilo-sin-roche")
 def Dilo_Sin_Roche():
-    return render_template("DiloSinRoche.html")
+    return render_template("dilo_sin_roche.html")
 
 @app.route("/3-2-1-tomen")
 def Tomen_3_2_1():
-    return render_template("321Tone.html")
+    return render_template("321tone.html")
 
 @app.route("/timer")
 def timer():
-    return render_template("diccionarioPrueba.html")
+    return render_template("diccionario_prueba.html") # Puede variar el template para hacer las pruebas
 
 
 if __name__ == "__main__":
